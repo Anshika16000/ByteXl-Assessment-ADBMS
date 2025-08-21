@@ -1,0 +1,62 @@
+-- Part: Database Setup
+-- Create the table
+CREATE TABLE StudentEnrollments (
+    student_id INT PRIMARY KEY,
+    student_name VARCHAR(100),
+    course_id VARCHAR(10),
+    enrollment_date DATE
+);
+
+-- Insert sample data
+INSERT INTO StudentEnrollments (student_id, student_name, course_id, enrollment_date) VALUES
+(1, 'Ashish', 'CSE101', '2024-06-01'),
+(2, 'Smaran', 'CSE102', '2024-06-01'),
+(3, 'Vaibhav', 'CSE103', '2024-06-01');
+
+-- Part A: Simulating a Deadlock
+
+-- Transaction 1 (User A)
+START TRANSACTION;
+UPDATE StudentEnrollments SET course_id = 'CS101A' WHERE student_id = 1;
+UPDATE StudentEnrollments SET course_id = 'CS102A' WHERE student_id = 2; -- This will wait
+COMMIT;
+
+-- Transaction 2 (User B)
+START TRANSACTION;
+UPDATE StudentEnrollments SET course_id = 'CS102B' WHERE student_id = 2;
+UPDATE StudentEnrollments SET course_id = 'CS101B' WHERE student_id = 1; -- This causes the deadlock
+COMMIT;
+
+
+-- Part B: Applying MVCC
+
+-- User A (Reader)
+START TRANSACTION;
+SELECT enrollment_date FROM StudentEnrollments WHERE student_id = 1;
+-- After User B commits, run this again inside the transaction
+SELECT enrollment_date FROM StudentEnrollments WHERE student_id = 1;
+COMMIT;
+-- After committing, run this to see the new value
+SELECT enrollment_date FROM StudentEnrollments WHERE student_id = 1;
+
+
+-- User B (Writer)
+START TRANSACTION;
+UPDATE StudentEnrollments SET enrollment_date = '2024-07-10' WHERE student_id = 1;
+COMMIT;
+
+
+-- Part C: Comparing Locking vs. MVCC
+
+-- Scenario 1: With Explicit Locking (Writer)
+START TRANSACTION;
+UPDATE StudentEnrollments SET enrollment_date = '2024-07-10' WHERE student_id = 1;
+COMMIT;
+
+-- Scenario 1: With Explicit Locking (Reader)
+START TRANSACTION;
+-- This query will be blocked until the writer commits
+SELECT enrollment_date FROM StudentEnrollments WHERE student_id = 1 FOR UPDATE;
+COMMIT;
+
+-- Scenario 2: With MVCC (code is the same as Part B)
