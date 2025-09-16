@@ -1,0 +1,79 @@
+DROP TABLE IF EXISTS StudentEnrollments;
+
+CREATE TABLE StudentEnrollments (
+    student_id SERIAL PRIMARY KEY,
+    student_name VARCHAR(100),
+    course_id VARCHAR(10),
+    enrollment_date DATE
+);
+
+INSERT INTO StudentEnrollments (student_name, course_id, enrollment_date) VALUES
+('Ashish', 'CSE101', '2024-06-01'),
+('Smaran', 'CSE102', '2024-06-01'),
+('Vaibhav', 'CSE103', '2024-06-01');
+
+
+--part A
+BEGIN;
+
+-- Lock row student_id=1
+UPDATE StudentEnrollments SET enrollment_date = '2024-06-10' WHERE student_id = 1;
+
+-- Wait here (don't commit), then try to lock student_id=2
+-- Execute after Session 2 locks student_id=2
+
+UPDATE StudentEnrollments SET enrollment_date = '2024-06-11' WHERE student_id = 2;
+
+COMMIT;
+
+BEGIN;
+
+-- Lock row student_id=2
+UPDATE StudentEnrollments SET enrollment_date = '2024-07-01' WHERE student_id = 2;
+
+-- Wait here (don't commit), then try to lock student_id=1
+-- Execute after Session 1 locks student_id=1
+
+UPDATE StudentEnrollments SET enrollment_date = '2024-07-02' WHERE student_id = 1;
+
+COMMIT;
+
+--part B
+BEGIN ISOLATION LEVEL REPEATABLE READ;
+
+SELECT enrollment_date FROM StudentEnrollments WHERE student_id = 1;
+
+BEGIN;
+
+-- Update enrollment_date for Ashish (student_id=1)
+UPDATE StudentEnrollments SET enrollment_date = '2024-07-10' WHERE student_id = 1;
+
+COMMIT;
+SELECT enrollment_date FROM StudentEnrollments WHERE student_id = 1;
+
+COMMIT;
+
+--Part C
+BEGIN;
+
+SELECT * FROM StudentEnrollments WHERE student_id = 1 FOR UPDATE;
+
+-- Update enrollment_date
+UPDATE StudentEnrollments SET enrollment_date = '2024-08-01' WHERE student_id = 1;
+
+BEGIN;
+SELECT * FROM StudentEnrollments WHERE student_id = 1 FOR UPDATE;
+
+COMMIT;
+COMMIT;
+
+BEGIN;
+UPDATE StudentEnrollments SET enrollment_date = '2024-09-01' WHERE student_id = 1;
+
+BEGIN ISOLATION LEVEL REPEATABLE READ;
+SELECT enrollment_date FROM StudentEnrollments WHERE student_id = 1;
+
+COMMIT;
+COMMIT;
+
+
